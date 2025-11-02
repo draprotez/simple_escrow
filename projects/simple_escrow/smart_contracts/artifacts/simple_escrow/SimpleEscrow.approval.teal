@@ -1,0 +1,252 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    intcblock 0 1
+    bytecblock "amount" "is_funded" "buyer" "seller" 0x151f7c750000000000000001
+    txn ApplicationID
+    bnz main_after_if_else@2
+    // smart_contracts/simple_escrow/contract.py:12
+    // self.buyer = Txn.sender
+    bytec_2 // "buyer"
+    txn Sender
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:13
+    // self.seller = Global.creator_address
+    bytec_3 // "seller"
+    global CreatorAddress
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:14
+    // self.amount = UInt64(0)
+    bytec_0 // "amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:15
+    // self.is_funded = UInt64(0)
+    bytec_1 // "is_funded"
+    intc_0 // 0
+    app_global_put
+
+main_after_if_else@2:
+    // smart_contracts/simple_escrow/contract.py:5
+    // class SimpleEscrow(ARC4Contract):
+    txn NumAppArgs
+    bz main___algopy_default_create@12
+    txn OnCompletion
+    !
+    assert // OnCompletion must be NoOp
+    txn ApplicationID
+    assert
+    pushbytess 0x08a9f1ba 0x85b7247e 0x5b723952 // method "fund()uint64", method "release()uint64", method "refund()uint64"
+    txna ApplicationArgs 0
+    match fund release refund
+    err
+
+main___algopy_default_create@12:
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    assert // OnCompletion must be NoOp && can only call when creating
+    intc_1 // 1
+    return
+
+
+// smart_contracts.simple_escrow.contract.SimpleEscrow.fund[routing]() -> void:
+fund:
+    // smart_contracts/simple_escrow/contract.py:22
+    // assert Txn.sender == self.buyer, "Hanya pembeli"
+    txn Sender
+    intc_0 // 0
+    bytec_2 // "buyer"
+    app_global_get_ex
+    assert // check self.buyer exists
+    ==
+    assert // Hanya pembeli
+    // smart_contracts/simple_escrow/contract.py:23
+    // assert self.is_funded == UInt64(0), "Sudah didanai"
+    intc_0 // 0
+    bytec_1 // "is_funded"
+    app_global_get_ex
+    assert // check self.is_funded exists
+    !
+    assert // Sudah didanai
+    // smart_contracts/simple_escrow/contract.py:24
+    // assert Txn.amount > UInt64(0), "Jumlah harus > 0"
+    txn Amount
+    assert // Jumlah harus > 0
+    // smart_contracts/simple_escrow/contract.py:26
+    // self.amount = Txn.amount
+    bytec_0 // "amount"
+    txn Amount
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:27
+    // self.is_funded = UInt64(1)
+    bytec_1 // "is_funded"
+    intc_1 // 1
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:29
+    // return self.amount
+    intc_0 // 0
+    bytec_0 // "amount"
+    app_global_get_ex
+    assert // check self.amount exists
+    // smart_contracts/simple_escrow/contract.py:17
+    // @abimethod
+    itob
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_1 // 1
+    return
+
+
+// smart_contracts.simple_escrow.contract.SimpleEscrow.release[routing]() -> void:
+release:
+    // smart_contracts/simple_escrow/contract.py:36
+    // assert Txn.sender == self.buyer, "Hanya pembeli"
+    txn Sender
+    intc_0 // 0
+    bytec_2 // "buyer"
+    app_global_get_ex
+    assert // check self.buyer exists
+    ==
+    assert // Hanya pembeli
+    // smart_contracts/simple_escrow/contract.py:37
+    // assert self.is_funded == UInt64(1), "Belum didanai"
+    intc_0 // 0
+    bytec_1 // "is_funded"
+    app_global_get_ex
+    assert // check self.is_funded exists
+    intc_1 // 1
+    ==
+    assert // Belum didanai
+    // smart_contracts/simple_escrow/contract.py:39-43
+    // itxn.Payment(
+    //     receiver=self.seller,
+    //     amount=self.amount,
+    //     fee=0
+    // ).submit()
+    itxn_begin
+    // smart_contracts/simple_escrow/contract.py:40
+    // receiver=self.seller,
+    intc_0 // 0
+    bytec_3 // "seller"
+    app_global_get_ex
+    assert // check self.seller exists
+    // smart_contracts/simple_escrow/contract.py:41
+    // amount=self.amount,
+    intc_0 // 0
+    bytec_0 // "amount"
+    app_global_get_ex
+    assert // check self.amount exists
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/simple_escrow/contract.py:39
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/simple_escrow/contract.py:42
+    // fee=0
+    intc_0 // 0
+    itxn_field Fee
+    // smart_contracts/simple_escrow/contract.py:39-43
+    // itxn.Payment(
+    //     receiver=self.seller,
+    //     amount=self.amount,
+    //     fee=0
+    // ).submit()
+    itxn_submit
+    // smart_contracts/simple_escrow/contract.py:45
+    // self.amount = UInt64(0)
+    bytec_0 // "amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:46
+    // self.is_funded = UInt64(0)
+    bytec_1 // "is_funded"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:31
+    // @abimethod
+    bytec 4 // 0x151f7c750000000000000001
+    log
+    intc_1 // 1
+    return
+
+
+// smart_contracts.simple_escrow.contract.SimpleEscrow.refund[routing]() -> void:
+refund:
+    // smart_contracts/simple_escrow/contract.py:55
+    // assert Txn.sender == self.seller, "Hanya penjual"
+    txn Sender
+    intc_0 // 0
+    bytec_3 // "seller"
+    app_global_get_ex
+    assert // check self.seller exists
+    ==
+    assert // Hanya penjual
+    // smart_contracts/simple_escrow/contract.py:56
+    // assert self.is_funded == UInt64(1), "Belum didanai"
+    intc_0 // 0
+    bytec_1 // "is_funded"
+    app_global_get_ex
+    assert // check self.is_funded exists
+    intc_1 // 1
+    ==
+    assert // Belum didanai
+    // smart_contracts/simple_escrow/contract.py:58-62
+    // itxn.Payment(
+    //     receiver=self.buyer,
+    //     amount=self.amount,
+    //     fee=0
+    // ).submit()
+    itxn_begin
+    // smart_contracts/simple_escrow/contract.py:59
+    // receiver=self.buyer,
+    intc_0 // 0
+    bytec_2 // "buyer"
+    app_global_get_ex
+    assert // check self.buyer exists
+    // smart_contracts/simple_escrow/contract.py:60
+    // amount=self.amount,
+    intc_0 // 0
+    bytec_0 // "amount"
+    app_global_get_ex
+    assert // check self.amount exists
+    itxn_field Amount
+    itxn_field Receiver
+    // smart_contracts/simple_escrow/contract.py:58
+    // itxn.Payment(
+    intc_1 // pay
+    itxn_field TypeEnum
+    // smart_contracts/simple_escrow/contract.py:61
+    // fee=0
+    intc_0 // 0
+    itxn_field Fee
+    // smart_contracts/simple_escrow/contract.py:58-62
+    // itxn.Payment(
+    //     receiver=self.buyer,
+    //     amount=self.amount,
+    //     fee=0
+    // ).submit()
+    itxn_submit
+    // smart_contracts/simple_escrow/contract.py:64
+    // self.amount = UInt64(0)
+    bytec_0 // "amount"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:65
+    // self.is_funded = UInt64(0)
+    bytec_1 // "is_funded"
+    intc_0 // 0
+    app_global_put
+    // smart_contracts/simple_escrow/contract.py:50
+    // @abimethod
+    bytec 4 // 0x151f7c750000000000000001
+    log
+    intc_1 // 1
+    return
